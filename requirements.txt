@@ -1,7 +1,6 @@
 streamlit
-yfinance 
+yfinance
 pandas
 pyarrow
-matplotlib.pyplot
-matplotlib.ticker
-numpy 
+matplotlib
+numpy
