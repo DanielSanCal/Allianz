@@ -195,6 +195,35 @@ volatilidad = float(volatilidad)
 st.write(f"**Rentabilidad geométrica ({selected_period}): {rentabilidad_geom * 100:.2f}%**")
 st.write(f"**Volatilidad ({selected_period}): {volatilidad * 100:.2f}%**")
 
+# Información general (la parte de información general no cambia)
+stock_info = yf.Ticker(selected_etf["symbol"]).info
+
+
+# Mostrar solo si el valor está disponible
+if stock_info.get("longName", "N/A") != "N/A":
+    st.write(f"**Nombre**: {stock_info['longName']}")
+    
+if stock_info.get("sector", "N/A") != "N/A":
+    st.write(f"**Sector**: {stock_info['sector']}")
+    
+if stock_info.get("marketCap", "N/A") != "N/A":
+    st.write(f"**Capitalización de mercado**: {stock_info['marketCap']}")
+
+if stock_info.get("fiftyTwoWeekHigh", "N/A") != "N/A":
+    st.write(f"**Máximo de 52 semanas**: {stock_info['fiftyTwoWeekHigh']}")
+
+if stock_info.get("fiftyTwoWeekLow", "N/A") != "N/A":
+    st.write(f"**Mínimo de 52 semanas**: {stock_info['fiftyTwoWeekLow']}")
+
+if stock_info.get("trailingPE", "N/A") != "N/A":
+    st.write(f"**P/E Ratio (Trailing)**: {stock_info['trailingPE']}")
+
+if stock_info.get("forwardPE", "N/A") != "N/A":
+    st.write(f"**P/E Ratio (Forward)**: {stock_info['forwardPE']}")
+
+if stock_info.get("fiveYearAvgDividendYield", "N/A") != "N/A":
+    st.write(f"**Tasa de crecimiento de dividendos a 5 años**: {stock_info['fiveYearAvgDividendYield']}")
+
 
         # Cargar y procesar los datos históricos
 data = yf.download(selected_etf["symbol"], period=period_code)
@@ -246,34 +275,7 @@ if st.session_state.show_graph:
 
     
 
-# Información general (la parte de información general no cambia)
-stock_info = yf.Ticker(selected_etf["symbol"]).info
-st.write(f"#### Información general:")
 
-# Mostrar solo si el valor está disponible
-if stock_info.get("longName", "N/A") != "N/A":
-    st.write(f"**Nombre**: {stock_info['longName']}")
-    
-if stock_info.get("sector", "N/A") != "N/A":
-    st.write(f"**Sector**: {stock_info['sector']}")
-    
-if stock_info.get("marketCap", "N/A") != "N/A":
-    st.write(f"**Capitalización de mercado**: {stock_info['marketCap']}")
-
-if stock_info.get("fiftyTwoWeekHigh", "N/A") != "N/A":
-    st.write(f"**Máximo de 52 semanas**: {stock_info['fiftyTwoWeekHigh']}")
-
-if stock_info.get("fiftyTwoWeekLow", "N/A") != "N/A":
-    st.write(f"**Mínimo de 52 semanas**: {stock_info['fiftyTwoWeekLow']}")
-
-if stock_info.get("trailingPE", "N/A") != "N/A":
-    st.write(f"**P/E Ratio (Trailing)**: {stock_info['trailingPE']}")
-
-if stock_info.get("forwardPE", "N/A") != "N/A":
-    st.write(f"**P/E Ratio (Forward)**: {stock_info['forwardPE']}")
-
-if stock_info.get("fiveYearAvgDividendYield", "N/A") != "N/A":
-    st.write(f"**Tasa de crecimiento de dividendos a 5 años**: {stock_info['fiveYearAvgDividendYield']}")
 
 # Apartado para ingresar monto inicial
 st.write("### Simulador de Inversión")
