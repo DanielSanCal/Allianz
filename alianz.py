@@ -28,7 +28,7 @@ if st.session_state['welcome_page']:
     # Campos de entrada de nombre y número
     with input_container.container():
         nombre = st.text_input("Introduce tu nombre")
-        numero = st.text_input("Introduce tu número", type="default")
+        numero = st.text_input("Introduce tu número celular", type="default")
 
         # Botón de continuar que solo se habilita si se ingresan ambos datos
         if st.button("Continuar") and nombre and numero:
