@@ -86,7 +86,7 @@ if not st.session_state['welcome_page']:
     st.sidebar.title("Selecciona los ETFs")
     selected_etfs = st.sidebar.multiselect("Selecciona uno o más ETFs", [etf['name'] for etf in etf_data])
 
-    period_options = ["1d", "5d", "1mo", "3mo", "6mo", "1y", "ytd", "3y", "5y", "10y"]
+    period_options = ["5d", "1mo", "3mo", "6mo", "1y", "ytd", "3y", "5y", "10y"]
     selected_period = st.sidebar.selectbox("Selecciona el período de análisis", period_options)
 
     st.title("Información de los ETFs seleccionados")
