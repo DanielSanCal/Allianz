@@ -5,10 +5,40 @@ import pyarrow as pa
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import numpy as np
+import datetime as dt
+import matplotlib.dates as mdates
 
 
 
-st.title("Simulador de Rendimientos Allianz Optimax")
+
+
+# Inicializar el estado de la sesión si no existe
+if 'welcome_page' not in st.session_state:
+    st.session_state['welcome_page'] = True
+
+# Página de bienvenida
+if st.session_state['welcome_page']:
+    # Mostrar el mensaje de bienvenida y el logo
+    st.image("https://chat.google.com/u/0/api/get_attachment_url?url_type=FIFE_URL&content_type=image%2Fjpeg&attachment_token=AOo0EEUdDh96bAKTuvITFUunSWjH377ErLJ7Gd2z0Nk6IVMWdXWOyV89Ryh%2FxzgahRf6mDVXXEPat1SfMQseFedPukRVaBIeAH3dg7c18NSeCoWDoXEJ2uE8Ue7kxtYO23C7z6%2FBbbDS8971El7T9OPFU4JBcuJ49pcNv%2B3mmMv%2FxYnkfqW8dN9GKFKUGMfml5YUT46CT2qEdwwyFbb2fUr2mhJJkdC4HD1eGn0tOzrcmi9q2es5rs%2Fl9s1yo6hZNLa99u3TRQUt2gPeATLTWTQBN9ABJTC2fCEYk84CRI9G0xpVNEW4q8OhmWUMzK7svkmZeXLw0WtVTZYOZu%2FlrYQ%2Bz5kIudJ2Hlkb7Y862EvzIXysU6IBhc6vNlhqGW7oWyEGg6blp3lgQC%2BEgLea7kmAatDLC35z2u9bhJG9eQ3JGGaoMT2%2FYOTJA00EXNCFUkN5jhUq49J1HsO1QNZi8LuUeY49uvhH9DKJtS6JnACNjoRR%2BcUSv1zRAFbcx09nMkg0bpAQHmTC8YL6gAVCkDVWuyt7LidxvHR9atb99x7UoIUmdfrQ7VoHSdYPH%2B1BW3%2BR9CzKPr%2Bc&sz=w1919-h958", width=200)
+    st.title("Bienvenido a Allianz Simulador")
+
+    # Contenedor para los campos de entrada
+    input_container = st.empty()
+
+    # Campos de entrada de nombre y número
+    with input_container.container():
+        nombre = st.text_input("Introduce tu nombre")
+        numero = st.text_input("Introduce tu número", type="default")
+
+        # Botón de continuar que solo se habilita si se ingresan ambos datos
+        if st.button("Continuar") and nombre and numero:
+            # Guardar nombre y número en el estado de sesión y pasar a la aplicación principal
+            st.session_state['nombre'] = nombre
+            st.session_state['numero'] = numero
+            st.session_state['welcome_page'] = False  # Cambiar a la página principal
+
+            # Limpiar el contenedor de entrada
+            input_container.empty()  # Eliminar los campos de entrada y el botón
 
 etf_data = [
     {"name": "AZ China", "symbol": "FXI", "description": "iShares China Large-Cap ETF que sigue a empresas chinas de gran capitalización."},
@@ -50,298 +80,306 @@ etf_data = [
     {"name": "AZ MSCI Germany Index", "symbol": "EWG", "description": "ETF que sigue el índice MSCI Germany, con empresas alemanas."},
     {"name": "AZ DJ US Home Construct", "symbol": "ITB", "description": "ETF que sigue el sector de construcción de viviendas en EE.UU."}
 ]
-# Lista de nombres de los ETF para desplegar
-etf_names = [etf["name"] for etf in etf_data]
 
-# Crear una lista desplegable
-selected_etf_name = st.selectbox("Selecciona un ETF", etf_names)
+# Página principal de la aplicación
+if not st.session_state['welcome_page']:
+    st.sidebar.title("Selecciona los ETFs")
+    selected_etfs = st.sidebar.multiselect("Selecciona uno o más ETFs", [etf['name'] for etf in etf_data])
 
-# Encontrar el ETF seleccionado en los datos y mostrar los detalles
-selected_etf = next((etf for etf in etf_data if etf["name"] == selected_etf_name), None)
+    period_options = ["1d", "5d", "1mo", "3mo", "6mo", "1y", "ytd", "3y", "5y", "10y"]
+    selected_period = st.sidebar.selectbox("Selecciona el período de análisis", period_options)
 
-if selected_etf:
-    st.write("### Detalles del ETF seleccionado")
-    st.write(f"**Nombre**: {selected_etf['name']}")
-    st.write(f"**Símbolo**: {selected_etf['symbol']}")
-    st.write(f"**Descripción**: {selected_etf['description']}")
+    st.title("Información de los ETFs seleccionados")
+    if selected_etfs:
+        selected_data = [{"Nombre": etf['name'], "Símbolo": etf['symbol'], "Descripción": etf['description']}
+                         for etf in etf_data if etf['name'] in selected_etfs]
+        
+        etf_df = pd.DataFrame(selected_data)
+        st.table(etf_df)
 
-# Opción para seleccionar el período de tiempo
-    st.write("### Selecciona el período de tiempo para los datos")
-    periods = {
-    "1 mes": "1mo",
-    "3 meses": "3mo",
-    "6 meses": "6mo",
-    "1 año": "1y",
-    "YTD": "ytd",
-    "5 años": "5y",
-    "10 años": "10y"
-    }
-    
-    # Cambiado a selectbox para seleccionar un único período
-selected_period = st.selectbox("Selecciona el período:", list(periods.keys()))
+        # Apartado de rendimiento
+        st.write("### Gráfica de Rendimiento")
+        plt.figure(figsize=(10, 6))
+        
+        summary_data = []  # Lista para almacenar los resúmenes
 
-if selected_period:
-        period_code = periods[selected_period]
-        st.write(f"#### Rendimientos     históricos para el período: {selected_period}")
-        data = yf.download(selected_etf["symbol"], period=period_code)
+        for etf in etf_data:
+            if etf['name'] in selected_etfs:
+                ticker = yf.Ticker(etf['symbol'])
+                
+                # Obtener rango de fechas para los últimos 3 años si es el periodo seleccionado
+                if selected_period == "3y":
+                    end_date = dt.datetime.today()
+                    start_date = end_date - dt.timedelta(days=3*365)  # Hace 3 años desde hoy
+                    data = ticker.history(start=start_date, end=end_date)
+                else:
+                    data = ticker.history(period=selected_period)
 
-        if data.empty:
-            st.write("No se encontraron datos para el período seleccionado.")
+                # Verificar si hay datos antes de graficar
+                if not data.empty:
+                    data['Rendimiento'] = (data['Close'] / data['Close'].iloc[0] - 1) * 100
+                    plt.plot(data.index, data['Rendimiento'], label=etf['name'])
+
+                    # Calcular rendimientos para la tabla resumen
+                    rendimiento_promedio = data['Rendimiento'].mean()
+                    rendimiento_anual = (data['Close'].iloc[-1] / data['Close'].iloc[0] - 1) * 100
+                    rendimiento_maximo = data['Rendimiento'].max()
+                    rendimiento_minimo = data['Rendimiento'].min()
+
+                    # Agregar los resultados a la lista
+                    summary_data.append({
+                        "Acción": etf['name'],
+                        "Rendimiento Promedio (%)": rendimiento_promedio,
+                        "Rendimiento Anual (%)": rendimiento_anual,
+                        "Rendimiento Máximo (%)": rendimiento_maximo,
+                        "Rendimiento Mínimo (%)": rendimiento_minimo,
+                    })
+
+        # Mostrar la gráfica de rendimiento
+        # Configuración del eje de fechas
+        if selected_period in ["5y", "10y"]:
+            plt.gca().xaxis.set_major_locator(mdates.YearLocator())  # Dividir por años
+            plt.gca().xaxis.set_major_formatter(mdates.DateFormatter("%Y"))  # Formato solo año
         else:
-            monthly_data = data.resample('M').last()
-            monthly_data['Rendimiento'] = monthly_data['Close'].pct_change() * 100  # Multiplicar por 100 para porcentajes
+            plt.gca().xaxis.set_major_locator(mdates.MonthLocator())  # Dividir por meses
+            plt.gca().xaxis.set_major_formatter(mdates.DateFormatter("%b %Y"))  # Formato mes y año
         
-
-            ###############################GRÁFICA RTOS MENSUALES
-
-
-
-        # Inicializar el estado de visibilidad de la gráfica de rendimientos mensuales
-if "show_returns_graph" not in st.session_state:
-    st.session_state.show_returns_graph = False
-
-# Botón para alternar la visibilidad de la gráfica de rendimientos mensuales
-if st.button("Mostrar/Ocultar Gráfica de Rendimientos Mensuales"):
-    st.session_state.show_returns_graph = not st.session_state.show_returns_graph  # Cambiar el estado
-
-# Mostrar la gráfica solo si el estado es True
-if st.session_state.show_returns_graph:
-    # Datos de ejemplo (reemplázalos con tus datos reales)
-    # monthly_data = obtener_datos_etf(selected_etf['symbol'], "1y") # Ejemplo de llamada a función
-
-    # Crear gráfica de rendimientos mensuales usando Matplotlib
-    fig, ax = plt.subplots(figsize=(10, 5))
-    ax.plot(monthly_data.index, monthly_data['Rendimiento'], marker='o', linestyle='-', color='royalblue', markersize=8)
-
-    # Mejorar estética de la gráfica
-    ax.set_title("Rendimientos Mensuales", fontsize=16, fontweight='bold', color='darkslategray')
-    ax.set_xlabel("Fecha", fontsize=12, fontweight='bold', color='dimgray')
-    ax.set_ylabel("Rendimiento (%)", fontsize=12, fontweight='bold', color='dimgray')
-
-    ax.set_facecolor('lightgray')  # Cambiar color de fondo
-    ax.grid(color='white', linestyle='--', linewidth=0.5)
-    plt.xticks(rotation=45)
-
-    # Formatear el eje Y como porcentaje
-    ax.yaxis.set_major_formatter(mticker.PercentFormatter())
-    plt.tight_layout()  # Ajustar para evitar recortes en los bordes
-    st.pyplot(fig)
-            ##### GRÁFICA RTOS MENSUALES
-
-###################################RENTABILIDAD SIMPLE
-# Obtener fechas de inicio y fin en el conjunto de datos
-fecha_inicio = data.index[0].strftime("%B %Y")
-fecha_fin = data.index[-1].strftime("%B %Y")
-if selected_period:
-    period_code = periods[selected_period]
-    #st.write(f"#### Precios históricos para el periodo: {fecha_inicio} - {fecha_fin}")
-    data = yf.download(selected_etf["symbol"], period=period_code)
-
-
-
-    if data.empty or 'Close' not in data.columns:
-        st.write("No hay datos disponibles para este ETF en el período seleccionado.")
-    else:
-        # Mostrar la gráfica de precios
-        #st.line_chart(data['Close'])
-
+        plt.xlabel("Fecha")
+        plt.ylabel("Rendimiento (%)")
+        plt.title("Rendimiento de los ETFs seleccionados")
+        plt.legend()
+        plt.grid(True)
         
+        plt.xticks(rotation=45)  # Girar las etiquetas para mejor legibilidad
+        
+        st.pyplot(plt)
+
+        # Crear DataFrame para el resumen y mostrarlo
+        summary_df = pd.DataFrame(summary_data)
+        st.write("### Resumen de Rendimientos")
+        st.table(summary_df)
+
+                        # Variable para controlar la visibilidad de la interpretación de rendimiento
+        if 'show_rendimiento' not in st.session_state:
+            st.session_state.show_rendimiento = False
+
+        # Botón para interpretación de rendimiento
+        if st.button("Interpretación Rendimiento"):
+            st.session_state.show_rendimiento = not st.session_state.show_rendimiento
+
+        # Mostrar o ocultar la interpretación de rendimiento
+        if st.session_state.show_rendimiento:
+            st.write("""
+            **Interpretación del Rendimiento:**
+            El rendimiento es la medida del retorno de una inversión en un periodo determinado. 
+            - **Importancia**: Es crucial para evaluar la efectividad de una inversión.
+            - **Rendimiento Alto**: Indica que la inversión ha generado buenos retornos, lo que puede ser atractivo para inversores que buscan maximizar ganancias.
+            - **Rendimiento Bajo**: Puede indicar una inversión poco rentable, lo que podría llevar a reconsiderar la estrategia de inversión.
+            - **Objetivo**: Si tu objetivo es crecimiento, busca rendimientos altos. Si buscas estabilidad, un rendimiento moderado con menor riesgo podría ser más adecuado.
+            """)
+
+        # Apartado de riesgo
+        st.write("### Gráfica de Volatilidad (Periodo mínimo: 1 mes)")
+        plt.figure(figsize=(10, 6))
+        
+        volatility_data = []  # Lista para almacenar los datos de volatilidad
+
+        for etf in etf_data:
+            if etf['name'] in selected_etfs:
+                ticker = yf.Ticker(etf['symbol'])
+                
+                # Obtener rango de fechas para los últimos 3 años si es el periodo seleccionado
+                if selected_period == "3y":
+                    end_date = dt.datetime.today()
+                    start_date = end_date - dt.timedelta(days=3*365)  # Hace 3 años desde hoy
+                    data = ticker.history(start=start_date, end=end_date)
+                else:
+                    data = ticker.history(period=selected_period)
+
+                # Verificar si hay datos antes de graficar
+                if not data.empty:
+                    data['Rendimiento'] = (data['Close'] / data['Close'].iloc[0] - 1) * 100
+                    data['Volatilidad'] = data['Rendimiento'].rolling(window=21).std()  # Desviación estándar mensual
+                    plt.plot(data.index, data['Volatilidad'], label=etf['name'])
+
+                    # Calcular volatilidad para la tabla resumen
+                    volatilidad_promedio = data['Volatilidad'].mean()
+                    volatilidad_maxima = data['Volatilidad'].max()
+                    volatilidad_minima = data['Volatilidad'].min()
+
+                    # Agregar los resultados a la lista
+                    volatility_data.append({
+                        "Acción": etf['name'],
+                        "Volatilidad Promedio (%)": volatilidad_promedio,
+                        "Volatilidad Máxima (%)": volatilidad_maxima,
+                        "Volatilidad Mínima (%)": volatilidad_minima,
+                    })
+
+        # Mostrar la gráfica de volatilidad
+        # Configuración del eje de fechas
+        if selected_period in ["5y", "10y"]:
+            plt.gca().xaxis.set_major_locator(mdates.YearLocator())  # Dividir por años
+            plt.gca().xaxis.set_major_formatter(mdates.DateFormatter("%Y"))  # Formato solo año
+        else:
+            plt.gca().xaxis.set_major_locator(mdates.MonthLocator())  # Dividir por meses
+            plt.gca().xaxis.set_major_formatter(mdates.DateFormatter("%b %Y"))  # Formato mes y año
+        
+        plt.xlabel("Fecha")
+        plt.ylabel("Volatilidad (%)")
+        plt.title("Volatilidad de los ETFs seleccionados")
+        plt.legend()
+        plt.grid(True)
+        
+        plt.xticks(rotation=45)  # Girar las etiquetas para mejor legibilidad
+        
+        st.pyplot(plt)
+
+        # Crear DataFrame para el resumen de volatilidad y mostrarlo
+        volatility_df = pd.DataFrame(volatility_data)
+        st.write("### Resumen de Volatilidad (Riesgo)")
+        st.table(volatility_df)
+
+                    # Variable para controlar la visibilidad de la interpretación de volatilidad
+        if 'show_volatilidad' not in st.session_state:
+            st.session_state.show_volatilidad = False
+
+        # Botón para interpretación de volatilidad
+        if st.button("Interpretación Volatilidad"):
+            st.session_state.show_volatilidad = not st.session_state.show_volatilidad
+
+        # Mostrar o ocultar la interpretación de volatilidad
+        if st.session_state.show_volatilidad:
+            st.write("""
+            **Interpretación de la Volatilidad:**
+            La volatilidad mide la variación del precio de un activo en un periodo de tiempo.
+            - **Importancia**: Indica el riesgo asociado a la inversión; una alta volatilidad puede sugerir un mayor riesgo.
+            - **Alta Volatilidad**: Significa que el precio de un activo fluctúa significativamente. Puede ser atractivo para inversores dispuestos a asumir riesgos a cambio de mayores rendimientos potenciales.
+            - **Baja Volatilidad**: Indica que el precio de un activo es más estable, lo que puede ser preferido por inversores que buscan seguridad y estabilidad.
+            - **Objetivo**: Si buscas crecimiento y estás dispuesto a asumir riesgos, podrías optar por activos con alta volatilidad. Para una inversión más conservadora, busca activos con baja volatilidad.
+            """)
+
     
-        # Acceder a los precios inicial y final
-        if len(data['Close']) >= 1:  # Asegurarse de que hay al menos un precio
-            precio_inicial = data['Close'].iloc[0].item()  # Primer valor de cierre como escalar
-            precio_final = data['Close'].iloc[-1].item()    # Último valor de cierre como escalar
-            st.write(f"#### Datos financieros para el periodo: {fecha_inicio} - {fecha_fin}")
-            # Mostrar precios en pantalla
-            st.write(f"**Precio inicial: ${precio_inicial:.2f}**")
-            st.write(f"**Precio final: ${precio_final:.2f}**")
+
+
             
-            # Calcular y mostrar el crecimiento
-            crecimiento = ((precio_final - precio_inicial) / precio_inicial) * 100
-            st.write(f"**Crecimiento en el período seleccionado: {crecimiento:.2f}%**")
+    else:
+        st.write("Por favor, selecciona uno o más ETFs para ver la información.")
+
+
+
+
+
+    # Inicializa la lista para el resumen de rendimientos
+    summary_data = []
+
+    # Inicializa un conjunto para rastrear los ETFs procesados
+    processed_etfs = set()
+
+    for etf in etf_data:
+        if etf['name'] in selected_etfs and etf['name'] not in processed_etfs:
+            ticker = yf.Ticker(etf['symbol'])
+
+            # Obtener rango de fechas para los últimos 10 años
+            end_date = dt.datetime.today()
+            start_date = end_date - dt.timedelta(days=10 * 365)  # Hace 10 años desde hoy
+            data = ticker.history(start=start_date, end=end_date)
+
+            # Verificar si hay datos antes de calcular rendimientos
+            if not data.empty:
+                data['Rendimiento'] = (data['Close'] / data['Close'].iloc[0] - 1) * 100
+                
+                # Calcular rendimientos para la tabla resumen
+                rendimiento_promedio = data['Rendimiento'].mean()
+                rendimiento_anual = ((data['Close'].iloc[-1] / data['Close'].iloc[0]) ** (1/10) - 1) * 100
+                rendimiento_maximo = data['Rendimiento'].max()
+                rendimiento_minimo = data['Rendimiento'].min()
+
+                # Agregar los resultados a la lista
+                summary_data.append({
+                    "Acción": etf['name'],
+                    "Rendimiento Promedio (%)": rendimiento_promedio,
+                    "Rendimiento Anual (%)": rendimiento_anual,
+                    "Rendimiento Máximo (%)": rendimiento_maximo,
+                    "Rendimiento Mínimo (%)": rendimiento_minimo,
+                })
+
+                # Agregar el ETF al conjunto para evitar duplicados
+                processed_etfs.add(etf['name'])
+
+    # Crear DataFrame para el resumen y mostrarlo
+    summary_df = pd.DataFrame(summary_data)
+
+
+
+    # Supongamos que tienes 'selected_data' ya definido en tu código anterior.
+    if selected_etfs:
+        # Título del simulador de inversión
+        st.header("Simulador de inversión")
+
+        # Ingreso del monto de inversión
+        investment_amount = st.number_input("Ingrese monto de la inversión", min_value=0.0, step=100.0)
+
+        # Inicializar un diccionario para almacenar los porcentajes
+        investment_percentages = {}
+
+        # Inicializar un valor total acumulado
+        total_allocated = 0.0
+
+        # Mostrar opciones para cada ETF seleccionado
+        for index, etf in enumerate(selected_data):
+            symbol = etf['Símbolo']
+            
+            # Calcular el porcentaje máximo que se puede asignar a este ETF
+            max_percentage = float(100.0 - total_allocated)
+            percentage = st.slider(f"Porcentaje de la inversión para {etf['Nombre']} ({symbol})",
+                                min_value=0.0, max_value=max_percentage, 
+                                step=0.1, value=0.0, format="%.1f")
+            
+            # Almacenar el porcentaje asignado
+            investment_percentages[symbol] = percentage
+            
+            # Actualizar el total acumulado
+            total_allocated += percentage
+
+        # Mostrar el total asignado
+        st.write(f"Total asignado: {total_allocated:.2f}%")
+
+        # Validar que la suma de los porcentajes sea 100%
+        if total_allocated > 100:
+            st.warning("La suma de los porcentajes no puede superar el 100%.")
+        elif total_allocated < 100:
+            st.warning("La suma de los porcentajes debe ser exactamente 100%.")
         else:
-            st.write("No hay suficientes datos para mostrar precios.")
-        #######################RENTABILIDAD SIMPLE
- ############################RENTABILIDAD GEOMETRICA
-        # Inicializa las variables
-rentabilidad_geom = 0.0
-volatilidad = 0.0
+            # Especificar los años de inversión
+            years = st.number_input("Años de la inversión (1-60)", min_value=1, max_value=60)
+            
+            # Inicializar un diccionario para almacenar los valores finales
+            final_values = {}
+            total_final_value = 0.0
 
-# Calcular y mostrar rentabilidad geométrica y volatilidad en función del periodo
-if selected_period in ["3 meses", "6 meses", "1 año", "YTD"]:
-    if selected_period == "1 mes":
-        # Calcular rendimientos diarios
-        retornos = data['Close'].pct_change().dropna() + 1
-    else:
-        # Resamplear a fin de mes para calcular rendimientos mensuales
-        data_mensual = data['Close'].resample('M').last()
-        retornos = data_mensual.pct_change().dropna() + 1
-    
-    rentabilidad_geom = np.prod(retornos) ** (1 / len(retornos)) - 1
-    volatilidad = retornos.std() * np.sqrt(12)  # Anualización
+            # Calcular el valor final para cada ETF basado en el rendimiento anualizado de la tabla de 10 años
+            for etf in selected_data:
+                symbol = etf['Símbolo']
+                # Encontrar el rendimiento anualizado para este ETF en la tabla de 10 años
+                rendimiento_anualizado = None
+                for summary in summary_data:  # Asegúrate de tener summary_data con los rendimientos a 10 años
+                    if summary["Acción"] == etf['Nombre']:
+                        rendimiento_anualizado = summary["Rendimiento Anual (%)"]
+                        break
+                
+                # Verificar que hay rendimiento anualizado
+                if rendimiento_anualizado is not None:
+                    # Monto de inversión para este ETF
+                    allocated_amount = (investment_amount * investment_percentages[symbol]) / 100
+                    # Calcular el valor final de la inversión
+                    final_value = allocated_amount * ((1 + rendimiento_anualizado / 100) ** years)
+                    final_values[symbol] = final_value
+                    total_final_value += final_value
 
-elif selected_period in ["3 años", "5 años", "10 años"]:
-    # Resamplear a fin de año para calcular rendimientos anuales
-    data_anual = data['Close'].resample('Y').last()
-    retornos = data_anual.pct_change().dropna() + 1
-    rentabilidad_geom = np.prod(retornos) ** (1 / len(retornos)) - 1
-    volatilidad = data_anual.pct_change().dropna().std()  # Ya en términos anuales
-
-# Convertir rentabilidad geométrica y volatilidad a flotante
-rentabilidad_geom = float(rentabilidad_geom)
-volatilidad = float(volatilidad)
-
-# Mostrar rentabilidad geométrica y volatilidad en pantalla
-st.write(f"**Rentabilidad geométrica ({selected_period}): {rentabilidad_geom * 100:.2f}%**")
-st.write(f"**Volatilidad ({selected_period}): {volatilidad * 100:.2f}%**")
-
-# Información general (la parte de información general no cambia)
-stock_info = yf.Ticker(selected_etf["symbol"]).info
-
-
-# Mostrar solo si el valor está disponible
-if stock_info.get("longName", "N/A") != "N/A":
-    st.write(f"**Nombre**: {stock_info['longName']}")
-    
-if stock_info.get("sector", "N/A") != "N/A":
-    st.write(f"**Sector**: {stock_info['sector']}")
-    
-if stock_info.get("marketCap", "N/A") != "N/A":
-    st.write(f"**Capitalización de mercado**: {stock_info['marketCap']}")
-
-if stock_info.get("fiftyTwoWeekHigh", "N/A") != "N/A":
-    st.write(f"**Máximo de 52 semanas**: {stock_info['fiftyTwoWeekHigh']}")
-
-if stock_info.get("fiftyTwoWeekLow", "N/A") != "N/A":
-    st.write(f"**Mínimo de 52 semanas**: {stock_info['fiftyTwoWeekLow']}")
-
-if stock_info.get("trailingPE", "N/A") != "N/A":
-    st.write(f"**P/E Ratio (Trailing)**: {stock_info['trailingPE']}")
-
-if stock_info.get("forwardPE", "N/A") != "N/A":
-    st.write(f"**P/E Ratio (Forward)**: {stock_info['forwardPE']}")
-
-if stock_info.get("fiveYearAvgDividendYield", "N/A") != "N/A":
-    st.write(f"**Tasa de crecimiento de dividendos a 5 años**: {stock_info['fiveYearAvgDividendYield']}")
-
-
-        # Cargar y procesar los datos históricos
-data = yf.download(selected_etf["symbol"], period=period_code)
-if not data.empty:
-    
-    import streamlit as st
-import matplotlib.pyplot as plt
-
-# Inicializar el estado de visibilidad de la gráfica
-if "show_graph" not in st.session_state:
-    st.session_state.show_graph = False
-
-# Botón para alternar la visibilidad de la gráfica
-if st.button("Mostrar/Ocultar Gráfica de Precios Mensuales"):
-    st.session_state.show_graph = not st.session_state.show_graph  # Cambiar el estado
-
-# Mostrar la gráfica solo si el estado es True
-if st.session_state.show_graph:
-    # Datos de ejemplo (reemplázalos con tus datos reales)
-    # monthly_data = obtener_datos_etf(selected_etf['symbol'], "1y") # Ejemplo de llamada a función
-
-    # Graficar precios mensuales en dólares
-    fig_price, ax_price = plt.subplots(figsize=(10, 5))
-    ax_price.plot(monthly_data.index, monthly_data['Close'], marker='o', linestyle='-', color='green', markersize=8)
-
-    # Mejorar estética de la gráfica
-    ax_price.set_title("Precios Mensuales del ETF (USD)", fontsize=16, fontweight='bold', color='darkslategray')
-    ax_price.set_xlabel("Fecha", fontsize=12, fontweight='bold', color='dimgray')
-    ax_price.set_ylabel("Precio (USD)", fontsize=12, fontweight='bold', color='dimgray')
-
-    ax_price.set_facecolor('lightgray')  # Cambiar color de fondo
-    ax_price.grid(color='white', linestyle='--', linewidth=0.5)
-    plt.xticks(rotation=45)
-
-    # Ajustar para evitar recortes en los bordes
-    plt.tight_layout()
-    st.pyplot(fig_price)
-
-
-    # Crear un DataFrame resampleado por mes y calcular el rendimiento mensual
-    monthly_data = data.resample('M').last()
-    monthly_data['Rendimiento'] = monthly_data['Close'].pct_change() * 100
-
-    # Calcular el rendimiento promedio
-    rendimiento_promedio = monthly_data['Rendimiento'].mean()
+            # Mostrar el valor final de cada ETF y el total
+            st.write("### Valores Finales de la Inversión por ETF")
+            for symbol, value in final_values.items():
+                st.write(f"{symbol}: ${value:,.2f}")
+            
+            st.write(f"### Valor Total Final de la Inversión: ${total_final_value:,.2f}")
         
-
-    
-
-    
-
-
-
-# Apartado para ingresar monto inicial
-st.write("### Simulador de Inversión")
-monto_inicial = st.number_input("Ingresa el monto inicial (en pesos):", min_value=0.0, format="%.2f")
-
-# Inicializar variables de valor final
-valor_final_simple = 0.0
-valor_final_geom = 0.0
-
-# Cálculos cuando se selecciona un período y hay un monto inicial
-if selected_period and monto_inicial > 0:
-    # Verifica que las variables estén definidas
-    if 'crecimiento' in locals() and 'rentabilidad_geom' in locals():
-        # Calcular rendimientos simples y geométricos
-        rendimiento_simple = crecimiento / 100  # Convertir a decimal
-        valor_final_simple = monto_inicial * (1 + rendimiento_simple)
-
-        # Usar rentabilidad geométrica
-        if selected_period in ["1 mes", "3 meses", "6 meses", "1 año", "YTD"]:
-            valor_final_geom = monto_inicial * (1 + rentabilidad_geom)
-        elif selected_period in ["5 años", "10 años"]:
-            valor_final_geom = monto_inicial * (1 + rentabilidad_geom) ** (5 if selected_period == "5 años" else 10)
-
-        # Mostrar resultados
-        st.write(f"**Valor final con rendimiento simple tras {selected_period}: ${valor_final_simple:.2f}**")
-        st.write(f"**Valor final con rentabilidad geométrica tras {selected_period}: ${valor_final_geom:.2f}**")
-    else:
-        st.write("Por favor, asegúrate de que los rendimientos simples y geométricos están calculados.")
-else:
-    st.write("Por favor, selecciona un período y un monto inicial mayor a cero para realizar la simulación.")
-
-
-# Crear listas para almacenar los datos de rendimiento y volatilidad
-etf_performance = []
-etf_volatility = []
-
-# Calcular rendimiento y volatilidad
-for etf in etf_data:
-    ticker = yf.Ticker(etf["symbol"])
-    data = ticker.history(period="1y")
-    
-    if not data.empty:
-        # Calcular rendimiento anualizado
-        start_price = data["Close"].iloc[0]
-        end_price = data["Close"].iloc[-1]
-        annual_return = ((end_price / start_price) - 1) * 100
-        etf_performance.append({"name": etf["name"], "symbol": etf["symbol"], "annual_return": annual_return})
-
-        # Calcular volatilidad
-        daily_returns = data['Close'].pct_change().dropna()
-        volatility = daily_returns.std() * 252
-        etf_volatility.append({"name": etf["name"], "symbol": etf["symbol"], "volatility": volatility})
-
-# Crear DataFrames
-etf_performance_df = pd.DataFrame(etf_performance).sort_values(by="annual_return", ascending=False).reset_index(drop=True)
-etf_volatility_df = pd.DataFrame(etf_volatility).sort_values(by="volatility", ascending=False).reset_index(drop=True)
-
-# Crear dos columnas en Streamlit
-col1, col2 = st.columns(2)
-
-# Mostrar la tabla de rendimiento en la primera columna
-with col1:
-    st.write("### Rendimiento anualizado de los ETFs (ordenado de mayor a menor)")
-    st.dataframe(etf_performance_df)
-
-# Mostrar la tabla de volatilidad en la segunda columna
-with col2:
-    st.write("### Volatilidad de los ETFs (ordenado de mayor a menor)")
-    st.dataframe(etf_volatility_df)
