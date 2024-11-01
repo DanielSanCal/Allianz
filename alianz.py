@@ -226,7 +226,7 @@ if not st.session_state['welcome_page']:
         
         plt.xlabel("Fecha")
         plt.ylabel("Volatilidad (%)")
-        plt.title("Volatilidad de los ETFs seleccionados")
+        plt.title("Evolucion historica de volaitlidad mensual")
         plt.legend()
         plt.grid(True)
         
