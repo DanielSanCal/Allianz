@@ -5,3 +5,5 @@ pyarrow
 matplotlib.pyplot
 matplotlib.ticker
 numpy 
+matplotlib.dates
+datetime
