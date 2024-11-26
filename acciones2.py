@@ -134,7 +134,7 @@ def ejecutar_acciones():
                 Esta podría ser una opción más conservadora si buscas menos exposición a riesgos altos.
                 """)
 
-        st.write("### Gráfica de Volatilidad (Periodo mayor a 1 mes")
+        st.write("### Gráfica de Volatilidad (Periodo mayor a 1 mes)")
         plt.figure(figsize=(10, 6))
         for seleccion in datos_seleccionados:
             simbolo = seleccion["Símbolo"]
