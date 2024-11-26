@@ -5,155 +5,177 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import datetime as dt
 
-def ejecutar_acciones():
-    # Diccionario de símbolos a nombres completos y descripciones
-    acciones_sp500 = {
-        "AAPL": {"name": "Apple", "description": "Diseña y fabrica productos electrónicos como el iPhone, iPad y Mac."},
-        "MSFT": {"name": "Microsoft", "description": "Proveedor líder de software, servicios en la nube y hardware."},
-        "GOOGL": {"name": "Alphabet (Google)", "description": "Gigante de internet con foco en búsquedas, publicidad y tecnología."},
-        "AMZN": {"name": "Amazon", "description": "Principal minorista en línea con servicios en la nube (AWS)."},
-        "TSLA": {"name": "Tesla", "description": "Fabricante de vehículos eléctricos y sistemas de energía solar."},
-        "NVDA": {"name": "NVIDIA", "description": "Desarrolla GPUs y tecnología de inteligencia artificial."},
-        "META": {"name": "Meta Platforms (Facebook)", "description": "Opera redes sociales como Facebook, Instagram y WhatsApp."},
-        "JPM": {"name": "JPMorgan Chase", "description": "Banco líder en servicios financieros globales."},
-        "V": {"name": "Visa", "description": "Empresa global de pagos electrónicos."},
-        "JNJ": {"name": "Johnson & Johnson", "description": "Multinacional de productos farmacéuticos y de cuidado personal."},
-        "WMT": {"name": "Walmart", "description": "Cadena minorista más grande del mundo."},
-        "PG": {"name": "Procter & Gamble", "description": "Fabricante de productos de consumo como detergentes y cosméticos."},
-        "DIS": {"name": "Disney", "description": "Líder en entretenimiento y medios con parques temáticos y estudios."},
-        "MA": {"name": "Mastercard", "description": "Empresa global de tecnología de pagos electrónicos."},
-        "HD": {"name": "Home Depot", "description": "Principal minorista de mejoras para el hogar."},
-        "XOM": {"name": "Exxon Mobil", "description": "Una de las mayores compañías de energía y petróleo del mundo."},
-        "CVX": {"name": "Chevron", "description": "Multinacional energética con enfoque en petróleo y gas."},
-        "PFE": {"name": "Pfizer", "description": "Empresa farmacéutica conocida por desarrollar vacunas y medicamentos."},
-        "KO": {"name": "Coca-Cola", "description": "Líder mundial en bebidas no alcohólicas."},
-        "PEP": {"name": "PepsiCo", "description": "Fabricante global de alimentos y bebidas."},
-        "ADBE": {"name": "Adobe", "description": "Empresa líder en software de diseño y marketing digital."},
-        "NFLX": {"name": "Netflix", "description": "Proveedor global de streaming de series y películas."},
-        "NKE": {"name": "Nike", "description": "Fabricante líder de ropa y calzado deportivo."},
-        "T": {"name": "AT&T", "description": "Empresa de telecomunicaciones y entretenimiento."},
-        "INTC": {"name": "Intel", "description": "Fabricante líder de microprocesadores y semiconductores."},
-        "CSCO": {"name": "Cisco", "description": "Proveedor de tecnología de redes y seguridad."},
-        "CRM": {"name": "Salesforce", "description": "Líder en software de gestión de relaciones con clientes (CRM)."},
-        "ORCL": {"name": "Oracle", "description": "Empresa de software y soluciones en la nube."},
-        "IBM": {"name": "IBM", "description": "Proveedor de soluciones tecnológicas y consultoría."},
-        "COST": {"name": "Costco", "description": "Minorista de membresía conocido por su valor y calidad."},
-    }
-
-    # Función para obtener datos de acciones con un periodo específico
-    @st.cache_data
-    def obtener_acciones_periodo(period):
-        resultados = []
-        for simbolo, datos in acciones_sp500.items():
-            try:
-                historial = yf.Ticker(simbolo).history(period=period)
-                if not historial.empty:
-                    rendimiento_anualizado = ((historial["Close"].iloc[-1] / historial["Close"].iloc[0]) - 1) * 100
-                    resultados.append({
-                        "Acción": simbolo,
-                        "Nombre": datos["name"],
-                        "Descripción": datos["description"],
-                        "Rendimiento Anualizado (%)": rendimiento_anualizado,
-                        "Datos": historial
-                    })
-            except Exception:
-                continue
-        return resultados
+def ejecutar_etfs():
+    # Datos de los ETFs
+    etf_data = [
+        {"name": "AZ China", "symbol": "FXI", "description": "iShares China Large-Cap ETF que sigue a empresas chinas de gran capitalización."},
+        {"name": "AZ MSCI Taiwan Index Fund", "symbol": "EWT", "description": "ETF que rastrea empresas de Taiwán incluidas en el índice MSCI Taiwan."},
+        {"name": "AZ Russell 2000", "symbol": "IWM", "description": "ETF que sigue el índice Russell 2000 de empresas pequeñas de EE.UU."},
+        {"name": "AZ Brasil", "symbol": "EWZ", "description": "iShares MSCI Brazil ETF que sigue el rendimiento de grandes y medianas empresas en Brasil."},
+        {"name": "AZ MSCI United Kingdom", "symbol": "EWU", "description": "ETF que sigue el índice MSCI United Kingdom con exposición al mercado del Reino Unido."},
+        {"name": "AZ DJ US Financial Sector", "symbol": "IYF", "description": "iShares U.S. Financials ETF que sigue el sector financiero de EE.UU."},
+        {"name": "AZ BRIC", "symbol": "BKF", "description": "ETF que sigue el índice BRIC, que incluye Brasil, Rusia, India y China."},
+        {"name": "AZ MSCI South Korea Index", "symbol": "EWY", "description": "ETF que rastrea el índice MSCI South Korea, con empresas surcoreanas."},
+        {"name": "AZ Barclays Aggregate", "symbol": "AGG", "description": "iShares Core U.S. Aggregate Bond ETF que sigue el mercado de bonos de EE.UU."},
+        {"name": "AZ Mercados Emergentes", "symbol": "EEM", "description": "iShares MSCI Emerging Markets ETF que sigue mercados emergentes globales."},
+        {"name": "AZ MSCI EMU", "symbol": "EZU", "description": "ETF que sigue el índice MSCI EMU de empresas de la eurozona."},
+        {"name": "AZ FTSE/Xinhua China 25", "symbol": "FXI", "description": "ETF que sigue las 25 principales empresas de China."},
+        {"name": "AZ Oro", "symbol": "GLD", "description": "SPDR Gold Shares ETF que sigue el precio del oro."},
+        {"name": "AZ Latixx Mex Cetetrac", "symbol": "N/A", "description": "ETF mexicano que sigue la evolución de cetes en México."},
+        {"name": "AZ QQQ Nasdaq 100", "symbol": "QQQ", "description": "ETF que sigue el índice Nasdaq 100 de empresas tecnológicas de gran capitalización."},
+        {"name": "AZ MSCI Asia ex-Japan", "symbol": "AAXJ", "description": "ETF que sigue el índice MSCI Asia ex-Japan, excluyendo empresas japonesas."},
+        {"name": "AZ Latixx Mex M10trac", "symbol": "N/A", "description": "ETF que sigue el rendimiento de bonos de mediano plazo en México."},
+        {"name": "AZ Barclays 1-3 Year TR", "symbol": "SHY", "description": "ETF de bonos del Tesoro a corto plazo (1-3 años) en EE.UU."},
+        {"name": "AZ MSCI ACWI Index Fund", "symbol": "ACWI", "description": "ETF que sigue el índice MSCI ACWI, incluyendo empresas globales."},
+        {"name": "AZ Latixx Mexico M5trac", "symbol": "N/A", "description": "ETF que sigue bonos de corto plazo en el mercado mexicano."},
+        {"name": "AZ Silver Trust", "symbol": "SLV", "description": "iShares Silver Trust que sigue el precio de la plata."},
+        {"name": "AZ MSCI Hong Kong Index", "symbol": "EWH", "description": "ETF que rastrea el índice MSCI Hong Kong, con empresas de Hong Kong."},
+        {"name": "AZ Latixx Mex Uditrac", "symbol": "N/A", "description": "ETF que sigue el rendimiento de bonos a largo plazo en México ajustados por inflación."},
+        {"name": "AZ SPDR S&P 500 ETF Trust", "symbol": "SPY", "description": "ETF que sigue el índice S&P 500 de empresas de gran capitalización en EE.UU."},
+        {"name": "AZ MSCI Japan Index Fund", "symbol": "EWJ", "description": "ETF que sigue el índice MSCI Japan, con empresas japonesas."},
+        {"name": "AZ BG EUR Govt Bond 1-3", "symbol": "BIL", "description": "ETF que sigue bonos del gobierno europeo a corto plazo (1-3 años)."},
+        {"name": "AZ SPDR DJIA Trust", "symbol": "DIA", "description": "ETF que sigue el índice Dow Jones Industrial Average."},
+        {"name": "AZ MSCI France Index Fund", "symbol": "EWQ", "description": "ETF que sigue el índice MSCI France, con empresas francesas."},
+        {"name": "AZ DJ US Oil & Gas Expl", "symbol": "IEO", "description": "ETF que sigue el sector de exploración y producción de petróleo y gas en EE.UU."},
+        {"name": "AZ Vanguard Emerging Market ETF", "symbol": "VWO", "description": "ETF de Vanguard que sigue los mercados emergentes."},
+        {"name": "AZ MSCI Australia Index", "symbol": "EWA", "description": "ETF que sigue el índice MSCI Australia, con empresas australianas."},
+        {"name": "AZ IPC Large Cap T R TR", "symbol": "N/A", "description": "ETF que sigue el índice IPC Large Cap de México."},
+        {"name": "AZ Financial Select Sector SPDR", "symbol": "XLF", "description": "ETF que sigue el sector financiero de EE.UU."},
+        {"name": "AZ MSCI Canada", "symbol": "EWC", "description": "ETF que sigue el índice MSCI Canada, con empresas canadienses."},
+        {"name": "AZ S&P Latin America 40", "symbol": "ILF", "description": "ETF que sigue el índice S&P Latin America 40 de grandes empresas latinoamericanas."},
+        {"name": "AZ Health Care Select Sector", "symbol": "XLV", "description": "ETF que sigue el sector de salud en EE.UU."},
+        {"name": "AZ MSCI Germany Index", "symbol": "EWG", "description": "ETF que sigue el índice MSCI Germany, con empresas alemanas."},
+        {"name": "AZ DJ US Home Construct", "symbol": "ITB", "description": "ETF que sigue el sector de construcción de viviendas en EE.UU."}
+    ]
 
     # Página principal de la aplicación
-    st.sidebar.title("Selecciona las Acciones")
-    nombres_completos = [datos["name"] for datos in acciones_sp500.values()]
-    seleccionadas_nombres = st.sidebar.multiselect("Selecciona una o más acciones", nombres_completos)
-    periodo = st.sidebar.selectbox("Selecciona el período de análisis", ["5d", "1mo", "3mo", "6mo", "1y", "5y", "10y"])
+    st.sidebar.title("Selecciona los ETFs")
+    selected_etfs = st.sidebar.multiselect("Selecciona uno o más ETFs", [etf['name'] for etf in etf_data])
 
-   
-    if seleccionadas_nombres:
-        datos_seleccionados = [
-            {"Símbolo": simbolo, "Nombre": datos["name"], "Descripción": datos["description"]}
-            for simbolo, datos in acciones_sp500.items() if datos["name"] in seleccionadas_nombres
-        ]
-        st.write("### Detalles de Acciones")
-        st.table(pd.DataFrame(datos_seleccionados))
+    period_options = ["5d", "1mo", "3mo", "6mo", "1y", "ytd", "3y", "5y", "10y"]
+    selected_period = st.sidebar.selectbox("Selecciona el período de análisis", period_options)
 
-        resumen_rendimientos = []
-        resumen_volatilidad = []
+    st.title("Información de los ETFs seleccionados")
+    if selected_etfs:
+        selected_data = [{"Nombre": etf['name'], "Símbolo": etf['symbol'], "Descripción": etf['description']}
+                         for etf in etf_data if etf['name'] in selected_etfs]
+        
+        etf_df = pd.DataFrame(selected_data)
+        st.table(etf_df)
 
+        # Apartado de rendimiento
         st.write("### Gráfica de Rendimiento")
         plt.figure(figsize=(10, 6))
-        for seleccion in datos_seleccionados:
-            simbolo = seleccion["Símbolo"]
-            ticker = yf.Ticker(simbolo)
-            datos = ticker.history(period=periodo)
+        
+        summary_data = []  # Lista para almacenar los resúmenes
 
-            if not datos.empty:
-                # Cálculos para la tabla de rendimiento (en porcentaje)
-                datos['Rendimiento'] = (datos['Close'] / datos['Close'].iloc[0] - 1) * 100  # Ya en porcentaje
-                resumen_rendimientos.append({
-                    "Acción": seleccion["Nombre"],
-                    "Rendimiento Promedio (%)": round(datos['Rendimiento'].mean(), 4),  # Redondeo a 2 decimales
-                    "Rendimiento Máximo (%)": round(datos['Rendimiento'].max(), 4),
-                    "Rendimiento Mínimo (%)": round(datos['Rendimiento'].min(), 4),
-                })
+        for etf in etf_data:
+            if etf['name'] in selected_etfs and etf['symbol'] != "N/A":
+                ticker = yf.Ticker(etf['symbol'])
+                
+                # Obtener rango de fechas para los últimos 3 años si es el periodo seleccionado
+                if selected_period == "3y":
+                    end_date = dt.datetime.today()
+                    start_date = end_date - dt.timedelta(days=3*365)  # Hace 3 años desde hoy
+                    data = ticker.history(start=start_date, end=end_date)
+                else:
+                    data = ticker.history(period=selected_period)
 
-                # Agregar rendimiento acumulado para la gráfica
-                datos["Rendimiento Acumulado"] = (datos["Close"] / datos["Close"].iloc[0] - 1) * 100  # Ya en porcentaje
-                plt.plot(datos.index, datos["Rendimiento Acumulado"], label=seleccion["Nombre"])
+                # Verificar si hay datos antes de graficar
+                if not data.empty:
+                    data['Rendimiento'] = (data['Close'] / data['Close'].iloc[0] - 1) * 100
+                    plt.plot(data.index, data['Rendimiento'], label=etf['name'])
 
-        # Configuración del eje de fechas para la gráfica
-        if periodo in ["5y", "10y"]:
+                    # Calcular rendimientos para la tabla resumen
+                    rendimiento_promedio = data['Rendimiento'].mean()
+                    rendimiento_anual = (data['Close'].iloc[-1] / data['Close'].iloc[0] - 1) * 100
+                    rendimiento_maximo = data['Rendimiento'].max()
+                    rendimiento_minimo = data['Rendimiento'].min()
+
+                    # Agregar los resultados a la lista
+                    summary_data.append({
+                        "Acción": etf['name'],
+                        "Rendimiento Promedio (%)": rendimiento_promedio,
+                        "Rendimiento Anual (%)": rendimiento_anual,
+                        "Rendimiento Máximo (%)": rendimiento_maximo,
+                        "Rendimiento Mínimo (%)": rendimiento_minimo,
+                    })
+
+        # Mostrar la gráfica de rendimiento
+        if selected_period in ["5y", "10y"]:
             plt.gca().xaxis.set_major_locator(mdates.YearLocator())
             plt.gca().xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
         else:
             plt.gca().xaxis.set_major_locator(mdates.MonthLocator())
             plt.gca().xaxis.set_major_formatter(mdates.DateFormatter("%b %Y"))
-
+        
         plt.xlabel("Fecha")
         plt.ylabel("Rendimiento (%)")
-        plt.title("Rendimiento de las Acciones Seleccionadas")
+        plt.title("Rendimiento de los ETFs seleccionados")
         plt.legend()
         plt.grid(True)
+        
         plt.xticks(rotation=45)
         st.pyplot(plt)
 
+        # Resumen de los rendimientos
+        summary_df = pd.DataFrame(summary_data)
         st.write("### Resumen de Rendimientos")
-        st.table(pd.DataFrame(resumen_rendimientos))
+        st.table(summary_df)
 
         # Interpretación de rendimientos
-        if st.button("Mostrar Interpretación de Rendimientos"):
-            if resumen_rendimientos:
-                mejor_rendimiento = max(resumen_rendimientos, key=lambda x: x["Rendimiento Promedio (%)"])
-                menor_rendimiento = min(resumen_rendimientos, key=lambda x: x["Rendimiento Promedio (%)"])
+        if summary_data:
+            if st.button("Mostrar Interpretación de Rendimientos"):
+                mejor_rendimiento = max(summary_data, key=lambda x: x["Rendimiento Anual (%)"])
+                menor_rendimiento = min(summary_data, key=lambda x: x["Rendimiento Anual (%)"])
                 st.write(f"""
                 **Interpretación de Rendimientos:**
-                La acción con mayor rendimiento promedio es **{mejor_rendimiento['Acción']}** con un rendimiento promedio de **{mejor_rendimiento['Rendimiento Promedio (%)']:.2f}%**.
-                Si tu prioridad es maximizar ganancias, esta sería una opción ideal.
-                Por otro lado, la acción con menor rendimiento promedio es **{menor_rendimiento['Acción']}**, con un rendimiento promedio de **{menor_rendimiento['Rendimiento Promedio (%)']:.2f}%**.
-                Esta podría ser una opción más conservadora si buscas menos exposición a riesgos altos.
+                El ETF con mayor rendimiento anual es **{mejor_rendimiento['Acción']}** con un rendimiento anual de **{mejor_rendimiento['Rendimiento Anual (%)']:.2f}%**.
+                Si buscas maximizar tus ganancias, este ETF podría ser una opción atractiva.
+                Por otro lado, el ETF con menor rendimiento anual es **{menor_rendimiento['Acción']}** con un rendimiento anual de **{menor_rendimiento['Rendimiento Anual (%)']:.2f}%**.
+                Este ETF podría ofrecer mayor estabilidad si prefieres un enfoque más conservador.
                 """)
 
-        st.write("### Gráfica de Volatilidad")
+        # Apartado de volatilidad
+        st.write("### Gráfica de Volatilidad (Periodo mínimo: 1 mes)")
         plt.figure(figsize=(10, 6))
-        for seleccion in datos_seleccionados:
-            simbolo = seleccion["Símbolo"]
-            ticker = yf.Ticker(simbolo)
-            datos = ticker.history(period=periodo)
+        
+        volatility_data = []  # Lista para almacenar los datos de volatilidad
 
-            if not datos.empty:
-                datos['Rendimiento'] = datos['Close'].pct_change() * 100  # Cálculo de rendimiento en porcentaje
-                datos['Volatilidad'] = datos['Rendimiento'].rolling(window=21).std()
+        for etf in etf_data:
+            if etf['name'] in selected_etfs and etf['symbol'] != "N/A":
+                ticker = yf.Ticker(etf['symbol'])
+                
+                # Obtener rango de fechas para los últimos 3 años si es el periodo seleccionado
+                if selected_period == "3y":
+                    end_date = dt.datetime.today()
+                    start_date = end_date - dt.timedelta(days=3*365)  # Hace 3 años desde hoy
+                    data = ticker.history(start=start_date, end=end_date)
+                else:
+                    data = ticker.history(period=selected_period)
 
-                resumen_volatilidad.append({
-                    "Acción": seleccion["Nombre"],
-                    "Volatilidad Promedio (%)": round(datos['Volatilidad'].mean(), 4),  # Redondeo a 2 decimales
-                    "Volatilidad Máxima (%)": round(datos['Volatilidad'].max(), 4),
-                    "Volatilidad Mínima (%)": round(datos['Volatilidad'].min(), 4),
-                })
+                # Verificar si hay datos antes de graficar
+                if not data.empty:
+                    data['Rendimiento'] = data['Close'].pct_change() * 100
+                    data['Volatilidad'] = data['Rendimiento'].rolling(window=21).std()  # Desviación estándar mensual
+                    plt.plot(data.index, data['Volatilidad'], label=etf['name'])
 
-                # Agregar volatilidad para la gráfica
-                plt.plot(datos.index, datos['Volatilidad'], label=seleccion["Nombre"])
+                    # Calcular volatilidad para la tabla resumen
+                    volatilidad_promedio = data['Volatilidad'].mean()
+                    volatilidad_maxima = data['Volatilidad'].max()
+                    volatilidad_minima = data['Volatilidad'].min()
 
-        # Configuración del eje de fechas para la gráfica de volatilidad
-        if periodo in ["5y", "10y"]:
+                    # Agregar los resultados a la lista
+                    volatility_data.append({
+                        "Acción": etf['name'],
+                        "Volatilidad Promedio (%)": volatilidad_promedio,
+                        "Volatilidad Máxima (%)": volatilidad_maxima,
+                        "Volatilidad Mínima (%)": volatilidad_minima,
+                    })
+
+        # Mostrar la gráfica de volatilidad
+        # Configuración del eje de fechas
+        if selected_period in ["5y", "10y"]:
             plt.gca().xaxis.set_major_locator(mdates.YearLocator())  # Dividir por años
             plt.gca().xaxis.set_major_formatter(mdates.DateFormatter("%Y"))  # Formato solo año
         else:
@@ -162,7 +184,7 @@ def ejecutar_acciones():
         
         plt.xlabel("Fecha")
         plt.ylabel("Volatilidad (%)")
-        plt.title("Volatilidad de las Acciones Seleccionadas")
+        plt.title("Volatilidad de los ETFs seleccionados")
         plt.legend()
         plt.grid(True)
         
@@ -171,77 +193,68 @@ def ejecutar_acciones():
         st.pyplot(plt)
 
         # Crear DataFrame para el resumen de volatilidad y mostrarlo
-        volatility_df = pd.DataFrame(resumen_volatilidad)
+        volatility_df = pd.DataFrame(volatility_data)
         st.write("### Resumen de Volatilidad (Riesgo)")
         st.table(volatility_df)
 
         # Interpretación dinámica de volatilidad
-        if st.button("Mostrar Interpretación de Volatilidad"):
-            if resumen_volatilidad:
-                mayor_volatilidad = max(resumen_volatilidad, key=lambda x: x["Volatilidad Promedio (%)"])
-                menor_volatilidad = min(resumen_volatilidad, key=lambda x: x["Volatilidad Promedio (%)"])
+        if volatility_data:
+            if st.button("Mostrar Interpretación de Volatilidad"):
+                mayor_volatilidad = max(volatility_data, key=lambda x: x["Volatilidad Promedio (%)"])
+                menor_volatilidad = min(volatility_data, key=lambda x: x["Volatilidad Promedio (%)"])
                 st.write(f"""
                 **Interpretación de Volatilidad:**
-                La acción más volátil es **{mayor_volatilidad['Acción']}** con una volatilidad promedio de **{mayor_volatilidad['Volatilidad Promedio (%)']:.2f}%**.
-                Esto indica que sus precios tienden a fluctuar más, lo que podría representar mayores riesgos pero también mayores oportunidades.
-                La acción menos volátil es **{menor_volatilidad['Acción']}**, con una volatilidad promedio de **{menor_volatilidad['Volatilidad Promedio (%)']:.2f}%**.
-                Esta podría ser una opción para quienes buscan estabilidad en lugar de altas fluctuaciones.
+                El ETF más volátil es **{mayor_volatilidad['Acción']}** con una volatilidad promedio de **{mayor_volatilidad['Volatilidad Promedio (%)']:.2f}%**.
+                Esto indica que sus precios fluctúan más, lo que puede representar mayores riesgos pero también mayores oportunidades de rendimiento.
+                El ETF menos volátil es **{menor_volatilidad['Acción']}** con una volatilidad promedio de **{menor_volatilidad['Volatilidad Promedio (%)']:.2f}%**.
+                Este ETF podría ser más adecuado si buscas una inversión más estable y con menor riesgo.
                 """)
 
-
         # Simulador de inversión
-    # Simulador de inversión
-        st.header("Simulador de Inversión")
-        monto_total = st.number_input("Monto total a invertir", min_value=0.0, step=100.0)
+        st.header("Simulador de inversión")
+        investment_amount = st.number_input("Ingrese monto de la inversión", min_value=0.0, step=100.0)
 
-        # Inicializamos los diccionarios para las asignaciones y el porcentaje total
         investment_percentages = {}
         total_allocated = 0.0
 
-        # Suponiendo que 'datos_seleccionados' contiene la información de las acciones seleccionadas
-        for seleccion in datos_seleccionados:
-            simbolo = seleccion["Símbolo"]
+        # Mostrar opciones para cada ETF seleccionado
+        for index, etf in enumerate(selected_data):
+            symbol = etf['Símbolo']
             max_percentage = float(100.0 - total_allocated)
-            percentage = st.slider(f"Asigna porcentaje para {seleccion['Nombre']} ({simbolo})", 
-                                min_value=0.0, max_value=max_percentage, 
-                                step=0.1, value=0.0, format="%.1f")
-            investment_percentages[simbolo] = percentage
+            percentage = st.slider(f"Porcentaje de la inversión para {etf['Nombre']} ({symbol})",
+                                  min_value=0.0, max_value=max_percentage,
+                                  step=0.1, value=0.0, format="%.1f")
+            investment_percentages[symbol] = percentage
             total_allocated += percentage
 
-        # Mostramos el total asignado
         st.write(f"Total asignado: {total_allocated:.2f}%")
 
-        # Si el total asignado es exactamente 100%, procedemos con el cálculo de la inversión
         if total_allocated > 100:
             st.warning("La suma de los porcentajes no puede superar el 100%.")
         elif total_allocated < 100:
             st.warning("La suma de los porcentajes debe ser exactamente 100%.")
         else:
-            # Número de años para la inversión
             years = st.number_input("Años de la inversión (1-60)", min_value=1, max_value=60)
 
             final_values = {}
             total_final_value = 0.0
 
-            # Calcular el valor final para cada acción seleccionada
-            for seleccion in datos_seleccionados:
-                simbolo = seleccion["Símbolo"]
-                porcentaje_asignado = investment_percentages[simbolo] / 100
-                ticker = yf.Ticker(simbolo)
-                datos = ticker.history(period="1y")  # Puedes ajustar el periodo aquí
+            for etf in selected_data:
+                symbol = etf['Símbolo']
+                rendimiento_anualizado = None
+                for summary in summary_data:
+                    if summary["Acción"] == etf['Nombre']:
+                        rendimiento_anualizado = summary["Rendimiento Anual (%)"]
+                        break
 
-                if not datos.empty:
-                    # Calcular el rendimiento anualizado
-                    rendimiento_anual = (datos["Close"].iloc[-1] / datos["Close"].iloc[0]) - 1
-                    valor_invertido = monto_total * porcentaje_asignado
-                    final_value = valor_invertido * ((1 + rendimiento_anual) ** years)  # Ajuste a lo largo de los años
-                    final_values[simbolo] = final_value
+                if rendimiento_anualizado is not None:
+                    allocated_amount = (investment_amount * investment_percentages[symbol]) / 100
+                    final_value = allocated_amount * ((1 + rendimiento_anualizado / 100) ** years)
+                    final_values[symbol] = final_value
                     total_final_value += final_value
 
-            # Mostrar el valor final de la inversión para cada acción
-            st.write("### Valores Finales de la Inversión por Acción")
-            for simbolo, value in final_values.items():
-                st.write(f"{simbolo}: ${value:,.2f}")
-
-            # Mostrar el valor total final de la inversión
+            st.write("### Valores Finales de la Inversión por ETF")
+            for symbol, value in final_values.items():
+                st.write(f"{symbol}: ${value:,.2f}")
+            
             st.write(f"### Valor Total Final de la Inversión: ${total_final_value:,.2f}")
