@@ -121,7 +121,18 @@ def ejecutar_acciones():
         # Usar el rendimiento promedio de la tabla para el simulador
         rendimiento_promedio = resumen_rendimientos[0]["Rendimiento Promedio (%)"] if resumen_rendimientos else 0
 
-        st.write(f"Rendimiento promedio: {rendimiento_promedio:.2f}%")
+        # Interpretación de rendimientos
+        if st.button("Mostrar Interpretación de Rendimientos"):
+            if resumen_rendimientos:
+                mejor_rendimiento = max(resumen_rendimientos, key=lambda x: x["Rendimiento Promedio (%)"])
+                menor_rendimiento = min(resumen_rendimientos, key=lambda x: x["Rendimiento Promedio (%)"])
+                st.write(f"""
+                **Interpretación de Rendimientos:**
+                La acción con mayor rendimiento promedio es **{mejor_rendimiento['Acción']}** con un rendimiento promedio de **{mejor_rendimiento['Rendimiento Promedio (%)']:.2f}%**.
+                Si tu prioridad es maximizar ganancias, esta sería una opción ideal.
+                Por otro lado, la acción con menor rendimiento promedio es **{menor_rendimiento['Acción']}**, con un rendimiento promedio de **{menor_rendimiento['Rendimiento Promedio (%)']:.2f}%**.
+                Esta podría ser una opción más conservadora si buscas menos exposición a riesgos altos.
+                """)
 
         st.write("### Gráfica de Volatilidad")
         plt.figure(figsize=(10, 6))
