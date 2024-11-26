@@ -40,7 +40,10 @@ if not st.session_state['welcome']:
         st.write("""
             **ETFs (Fondos Cotizados en Bolsa)** son fondos de inversión que contienen una variedad de activos (como acciones, bonos, etc.), y se pueden comprar y vender en la bolsa de valores como si fueran acciones individuales. Son más diversificados que las acciones individuales.
         """)
-
+    st.write("""
+        Si hay algún instrumento en específico que no esté dentro del simulador que te interese,
+             puedes contactarte con danielsandoval@gmail.com
+    """)
     # Botón para continuar
     if st.button("Continuar") and nombre and numero:
         st.session_state['nombre'] = nombre
